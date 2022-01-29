@@ -1,6 +1,7 @@
 package tests_test
 
 import (
+	"log"
 	"testing"
 
 	"github.com/Dank-del/MusixScrape/musixScrape"
@@ -11,10 +12,10 @@ var (
 		"麻婆豆腐 - シロガネ",
 	}
 	_aimerSongNames = []string{
-		"Aimer – Open The Doors",
-		"Aimer – Asa ga kuru",
-		"Aimer – I beg you",
-		"Aimer – Closer",
+		//"Aimer – Open The Doors",
+		//"Aimer – Asa ga kuru",
+		//"Aimer – I beg you",
+		//"Aimer – Closer",
 		"Aimer – Falling Alone",
 		"Aimer – Stars in the Rain",
 	}
@@ -48,6 +49,8 @@ func TestSearch(t *testing.T) {
 			t.Error("No results found for", current)
 			return
 		}
+
+		log.Println("Found lyrics for " + current + ":" + res[0].Lyrics)
 	}
 
 	for _, current := range _aimerSongNames {
