@@ -1,6 +1,8 @@
 package musixScrape
 
-import "github.com/gocolly/colly/v2"
+import (
+	"github.com/gocolly/colly/v2"
+)
 
 type LyricResult struct {
 	Song   string
@@ -9,8 +11,9 @@ type LyricResult struct {
 }
 
 type Client struct {
-	Collector *colly.Collector
-	Opts      *ScrapeOpts
+	Collector  *colly.Collector
+	Opts       *ScrapeOpts
+	loggerFunc func(v ...interface{})
 }
 
 type ScrapeOpts struct {
@@ -19,4 +22,5 @@ type ScrapeOpts struct {
 	LyricCssSelector      string
 	SongNameCssSelector   string
 	ArtistNameCssSelector string
+	Logger                func(v ...interface{})
 }
