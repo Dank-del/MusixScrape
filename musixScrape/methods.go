@@ -9,26 +9,26 @@ import (
 func (c *Client) GetLyricsFromLink(url string) (*LyricResult, error) {
 	res := new(LyricResult)
 	// Instantiate default collector
-	// On every a element which has href attribute call callback
-	c.Collector.OnHTML(c.Opts.LyricCssSelector, func(e *colly.HTMLElement) {
+	// On every an element which has href attribute call callback
+	c.Opts.Collector.OnHTML(c.Opts.LyricCssSelector, func(e *colly.HTMLElement) {
 		// link := e.Attr("href")
 		res.Lyrics = e.Text
 	})
-	c.Collector.OnHTML(c.Opts.SongNameCssSelector, func(e *colly.HTMLElement) {
+	c.Opts.Collector.OnHTML(c.Opts.SongNameCssSelector, func(e *colly.HTMLElement) {
 		res.Song = strings.ReplaceAll(e.Text, "Lyrics", "")
 	})
 
-	c.Collector.OnHTML(c.Opts.ArtistNameCssSelector, func(e *colly.HTMLElement) {
+	c.Opts.Collector.OnHTML(c.Opts.ArtistNameCssSelector, func(e *colly.HTMLElement) {
 		res.Artist = e.Text
 	})
 	// Before making a request print "Visiting ..."
-	c.Collector.OnRequest(func(r *colly.Request) {
+	c.Opts.Collector.OnRequest(func(r *colly.Request) {
 		if c.loggerFunc != nil {
 			c.loggerFunc("[MusixScrape Debug] Visiting", r.URL.String())
 		}
 	})
 
-	err := c.Collector.Visit(url)
+	err := c.Opts.Collector.Visit(url)
 	if err != nil {
 		return nil, err
 	}
@@ -53,8 +53,8 @@ func (c *Client) Search(query string) ([]LyricResult, error) {
 				}
 			})
 	*/
-	c.Collector.OnHTML(`div.box:nth-child(2) > div:nth-child(2) > div:nth-child(1) > ul:nth-child(1)`, func(element *colly.HTMLElement) {
-		element.ForEach(`div.box:nth-child(2) > div:nth-child(2) > div:nth-child(1) > ul:nth-child(1) > li:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > h2:nth-child(1) > a:nth-child(1)`,
+	c.Opts.Collector.OnHTML(c.Opts.SearchOuterCssSelector, func(element *colly.HTMLElement) {
+		element.ForEach(c.Opts.SearchInnerCssSelector,
 			func(i int, element *colly.HTMLElement) {
 				if l := element.Attr("href"); l != "" {
 					link := "https://" + c.Opts.Domain + l
@@ -68,13 +68,13 @@ func (c *Client) Search(query string) ([]LyricResult, error) {
 			})
 	})
 	// Before making a request print "Visiting ..."
-	c.Collector.OnRequest(func(r *colly.Request) {
+	c.Opts.Collector.OnRequest(func(r *colly.Request) {
 		if c.loggerFunc != nil {
 			c.loggerFunc("[MusixScrape Debug] Visiting", r.URL.String())
 		}
 	})
 
-	err = c.Collector.Visit(url)
+	err = c.Opts.Collector.Visit(url)
 	if err != nil {
 		return nil, err
 	}

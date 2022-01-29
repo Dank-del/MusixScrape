@@ -10,19 +10,20 @@ import (
 var (
 	_songNames = []string{
 		"麻婆豆腐 - シロガネ",
+		"Yuu Miyashita - Koufukuron",
 	}
 	_aimerSongNames = []string{
-		//"Aimer – Open The Doors",
-		//"Aimer – Asa ga kuru",
-		//"Aimer – I beg you",
-		//"Aimer – Closer",
+		"Aimer – Open The Doors",
+		"Aimer – Asa ga kuru",
+		"Aimer – I beg you",
+		"Aimer – Closer",
 		"Aimer – Falling Alone",
 		"Aimer – Stars in the Rain",
 	}
 )
 
 func TestSearchByLink(t *testing.T) {
-	c := musixScrape.New(nil, nil)
+	c := musixScrape.New(nil)
 	res, err := c.GetLyricsFromLink("https://www.musixmatch.com/lyrics/BAND-MAID/Sense")
 	if err != nil {
 		t.Error(err)
@@ -34,7 +35,7 @@ func TestSearchByLink(t *testing.T) {
 }
 
 func TestSearch(t *testing.T) {
-	c := musixScrape.New(nil, nil)
+	c := musixScrape.New(nil)
 	var res []musixScrape.LyricResult
 	var err error
 
