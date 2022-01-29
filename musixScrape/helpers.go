@@ -18,6 +18,7 @@ func New(collector *colly.Collector, opts *ScrapeOpts) *Client {
 	if collector == nil {
 		collector = colly.NewCollector(
 			colly.AllowedDomains(opts.Domain),
+			colly.AllowURLRevisit(),
 		)
 	}
 
