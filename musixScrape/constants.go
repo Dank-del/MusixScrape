@@ -1,4 +1,4 @@
-package MusixScrape
+package musixScrape
 
 const (
 	Domain                = "www.musixmatch.com"

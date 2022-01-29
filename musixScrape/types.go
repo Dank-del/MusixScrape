@@ -1,4 +1,4 @@
-package MusixScrape
+package musixScrape
 
 import "github.com/gocolly/colly/v2"
 

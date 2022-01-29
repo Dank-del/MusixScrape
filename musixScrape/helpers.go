@@ -1,9 +1,10 @@
-package MusixScrape
+package musixScrape
 
 import (
-	"github.com/gocolly/colly/v2"
 	"log"
 	"strings"
+
+	"github.com/gocolly/colly/v2"
 )
 
 func New(collector *colly.Collector, opts *ScrapeOpts) *Client {
