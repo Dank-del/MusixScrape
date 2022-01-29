@@ -25,7 +25,7 @@ func New(collector *colly.Collector, opts *ScrapeOpts) *Client {
 	return &Client{Collector: collector, Opts: opts}
 }
 func (c *Client) GetLyricsFromLink(url string) (*LyricResult, error) {
-	res := LyricResult{}
+	res := new(LyricResult)
 	// Instantiate default collector
 	// On every a element which has href attribute call callback
 	c.Collector.OnHTML(c.Opts.LyricCssSelector, func(e *colly.HTMLElement) {
@@ -43,11 +43,13 @@ func (c *Client) GetLyricsFromLink(url string) (*LyricResult, error) {
 	c.Collector.OnRequest(func(r *colly.Request) {
 		log.Println("[MusixScrape Debug] Visiting", r.URL.String())
 	})
+
 	err := c.Collector.Visit(url)
 	if err != nil {
 		return nil, err
 	}
-	return &res, nil
+
+	return res, nil
 }
 
 func (c *Client) Search(query string) ([]LyricResult, error) {
@@ -84,9 +86,11 @@ func (c *Client) Search(query string) ([]LyricResult, error) {
 	c.Collector.OnRequest(func(r *colly.Request) {
 		log.Println("[MusixScrape Debug] Visiting", r.URL.String())
 	})
+
 	err = c.Collector.Visit(url)
 	if err != nil {
 		return nil, err
 	}
+
 	return res, nil
 }
