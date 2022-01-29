@@ -6,43 +6,53 @@ import (
 	"strings"
 )
 
-func GetLyricsFromLink(url string) (*LyricResult, error) {
+func New(collector *colly.Collector, opts *ScrapeOpts) *Client {
+	if opts == nil {
+		opts = &ScrapeOpts{
+			Domain:                Domain,
+			ArtistNameCssSelector: ArtistNameCssSelector,
+			SongNameCssSelector:   SongNameCssSelector,
+			SearchUrl:             SearchUrl,
+			LyricCssSelector:      LyricCssSelector,
+		}
+	}
+	if collector == nil {
+		collector = colly.NewCollector(
+			colly.AllowedDomains(opts.Domain),
+		)
+	}
+	return &Client{Collector: collector, Opts: opts}
+}
+func (c *Client) GetLyricsFromLink(url string) (*LyricResult, error) {
 	res := LyricResult{}
 	// Instantiate default collector
-	c := colly.NewCollector(
-		colly.AllowedDomains(Domain),
-	)
 	// On every a element which has href attribute call callback
-	c.OnHTML(LyricCssSelector, func(e *colly.HTMLElement) {
+	c.Collector.OnHTML(c.Opts.LyricCssSelector, func(e *colly.HTMLElement) {
 		// link := e.Attr("href")
 		res.Lyrics = e.Text
 	})
-	c.OnHTML(SongNameCssSelector, func(e *colly.HTMLElement) {
+	c.Collector.OnHTML(c.Opts.SongNameCssSelector, func(e *colly.HTMLElement) {
 		res.Song = strings.ReplaceAll(e.Text, "Lyrics", "")
 	})
 
-	c.OnHTML(ArtistNameCssSelector, func(e *colly.HTMLElement) {
+	c.Collector.OnHTML(c.Opts.ArtistNameCssSelector, func(e *colly.HTMLElement) {
 		res.Artist = e.Text
 	})
 	// Before making a request print "Visiting ..."
-	c.OnRequest(func(r *colly.Request) {
+	c.Collector.OnRequest(func(r *colly.Request) {
 		log.Println("[MusixScrape Debug] Visiting", r.URL.String())
 	})
-	err := c.Visit(url)
+	err := c.Collector.Visit(url)
 	if err != nil {
 		return nil, err
 	}
 	return &res, nil
 }
 
-func Search(query string) ([]LyricResult, error) {
+func (c *Client) Search(query string) ([]LyricResult, error) {
 	var res []LyricResult
 	var err error
-	// Instantiate default collector
-	c := colly.NewCollector(
-		colly.AllowedDomains(Domain),
-	)
-	url := SearchUrl + query
+	url := c.Opts.SearchUrl + query
 	/*
 		c.OnHTML(`div.box:nth-child(1) > div:nth-child(2) > div:nth-child(1) > ul:nth-child(1) > li:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > h2:nth-child(1) > a:nth-child(1)`,
 			func(e *colly.HTMLElement) {
@@ -56,23 +66,24 @@ func Search(query string) ([]LyricResult, error) {
 				}
 			})
 	*/
-	c.OnHTML(`div.box:nth-child(2) > div:nth-child(2) > div:nth-child(1) > ul:nth-child(1)`, func(element *colly.HTMLElement) {
-		element.ForEach(`div.box:nth-child(2) > div:nth-child(2) > div:nth-child(1) > ul:nth-child(1) > li:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > h2:nth-child(1) > a:nth-child(1)`, func(i int, element *colly.HTMLElement) {
-			if l := element.Attr("href"); l != "" {
-				link := "https://" + Domain + l
-				ly, err := GetLyricsFromLink(link)
-				if err != nil {
-					return
+	c.Collector.OnHTML(`div.box:nth-child(2) > div:nth-child(2) > div:nth-child(1) > ul:nth-child(1)`, func(element *colly.HTMLElement) {
+		element.ForEach(`div.box:nth-child(2) > div:nth-child(2) > div:nth-child(1) > ul:nth-child(1) > li:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > h2:nth-child(1) > a:nth-child(1)`,
+			func(i int, element *colly.HTMLElement) {
+				if l := element.Attr("href"); l != "" {
+					link := "https://" + c.Opts.Domain + l
+					ly, err := c.GetLyricsFromLink(link)
+					if err != nil {
+						return
+					}
+					res = append(res, *ly)
 				}
-				res = append(res, *ly)
-			}
-		})
+			})
 	})
 	// Before making a request print "Visiting ..."
-	c.OnRequest(func(r *colly.Request) {
+	c.Collector.OnRequest(func(r *colly.Request) {
 		log.Println("[MusixScrape Debug] Visiting", r.URL.String())
 	})
-	err = c.Visit(url)
+	err = c.Collector.Visit(url)
 	if err != nil {
 		return nil, err
 	}

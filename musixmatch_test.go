@@ -3,7 +3,8 @@ package MusixScrape
 import "testing"
 
 func TestSearchByLink(t *testing.T) {
-	res, err := GetLyricsFromLink("https://www.musixmatch.com/lyrics/BAND-MAID/Sense")
+	c := New(nil, nil)
+	res, err := c.GetLyricsFromLink("https://www.musixmatch.com/lyrics/BAND-MAID/Sense")
 	if err != nil {
 		t.Error(err)
 	}
@@ -14,7 +15,8 @@ func TestSearchByLink(t *testing.T) {
 }
 
 func TestSearch(t *testing.T) {
-	res, err := Search("Band Maid - Sense")
+	c := New(nil, nil)
+	res, err := c.Search("麻婆豆腐 - シロガネ")
 	if err != nil {
 		t.Error(err)
 	}
