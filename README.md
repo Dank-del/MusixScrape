@@ -1,4 +1,4 @@
-# <img src="https://s.mxmcdn.net/site/images/logo_icon.svg" width="45px" align="left"></img>MusixScrape
+# <img src="https://s.mxmcdn.net/site/images/logo_icon.svg" width="45px" align="left"></img>MusixScrape [![Go Reference](https://pkg.go.dev/badge/github.com/Dank-del/MusixScrape.svg)](https://pkg.go.dev/github.com/Dank-del/MusixScrape) [![Go-linux](https://github.com/Dank-del/MusixScrape/actions/workflows/go-linux.yml/badge.svg)](https://github.com/Dank-del/MusixScrape/actions/workflows/go-linux.yml) [![Go-macos](https://github.com/Dank-del/MusixScrape/actions/workflows/go-macos.yml/badge.svg)](https://github.com/Dank-del/MusixScrape/actions/workflows/go-macos.yml) [![Go-windows](https://github.com/Dank-del/MusixScrape/actions/workflows/go-windows.yml/badge.svg)](https://github.com/Dank-del/MusixScrape/actions/workflows/go-windows.yml)
 
 ### A Golang package to scrape [musixmatch.com](https://musixmatch.com)
 
