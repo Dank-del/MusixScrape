@@ -19,28 +19,21 @@
 package musixScrape
 
 import (
-	"github.com/gocolly/colly/v2"
+	"net/http"
+	"net/url"
 )
 
-type LyricResult struct {
-	Song   string
-	Artist string
-	Lyrics string
+type SearchResult struct {
+	Artist, Song string
+	Url          *url.URL
+}
+
+type Lyrics struct {
+	Artist, Song, Lyrics string
 }
 
 type Client struct {
-	Opts       *ScrapeOpts
-	loggerFunc func(v ...interface{})
-}
-
-type ScrapeOpts struct {
-	Domain                 string
-	SearchUrl              string
-	LyricCssSelector       string
-	SongNameCssSelector    string
-	ArtistNameCssSelector  string
-	SearchOuterCssSelector string
-	SearchInnerCssSelector string
-	Collector              *colly.Collector
-	Logger                 func(v ...interface{})
+	SearchUrl  string
+	UserAgent  string
+	HttpClient *http.Client
 }
