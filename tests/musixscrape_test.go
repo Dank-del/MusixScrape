@@ -19,7 +19,7 @@
 package tests_test
 
 import (
-	"log"
+	"net/url"
 	"testing"
 
 	"github.com/Dank-del/MusixScrape/musixScrape"
@@ -29,6 +29,7 @@ var (
 	_songNames = []string{
 		"麻婆豆腐 - シロガネ",
 		"Yuu Miyashita - Koufukuron",
+		"bo en - My Time",
 	}
 	_aimerSongNames = []string{
 		"Aimer – Open The Doors",
@@ -41,20 +42,24 @@ var (
 )
 
 func TestSearchByLink(t *testing.T) {
-	c := musixScrape.New(nil)
-	res, err := c.GetLyricsFromLink("https://www.musixmatch.com/lyrics/BAND-MAID/Sense")
+	c := musixScrape.New()
+	url, err := url.Parse("https://www.musixmatch.com/lyrics/BAND-MAID/Sense")
 	if err != nil {
 		t.Error(err)
+		return
 	}
-	if res != nil {
-		t.Log(res)
+	res, err := c.GetLyrics(url)
+	if err != nil {
+		t.Error(err)
+		return
 	}
-
+	t.Logf("%s - %s:\n%s", res.Artist, res.Song, res.Lyrics)
 }
 
 func TestSearch(t *testing.T) {
-	c := musixScrape.New(nil)
-	var res []musixScrape.LyricResult
+	c := musixScrape.New()
+	var res []musixScrape.SearchResult
+	var lyrics musixScrape.Lyrics
 	var err error
 
 	for _, current := range _songNames {
@@ -64,12 +69,16 @@ func TestSearch(t *testing.T) {
 			return
 		}
 
-		if len(res) == 0 || res[0].Song == "" {
+		if len(res) == 0 {
 			t.Error("No results found for", current)
 			return
 		}
-
-		log.Println("Found lyrics for " + current + ":" + res[0].Lyrics)
+		lyrics, err = c.GetLyrics(res[0].Url)
+		if err != nil {
+			t.Error("Error while getting lyrics for", current, err)
+			return
+		}
+		t.Logf("%s - %s:\n%s", res[0].Artist, res[0].Song, lyrics.Lyrics)
 	}
 
 	for _, current := range _aimerSongNames {
@@ -79,7 +88,7 @@ func TestSearch(t *testing.T) {
 			return
 		}
 
-		if len(res) == 0 || res[0].Song == "" {
+		if len(res) == 0 {
 			t.Error("No results found for:", current)
 			return
 		}

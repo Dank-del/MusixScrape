@@ -19,83 +19,178 @@
 package musixScrape
 
 import (
+	"errors"
+	"fmt"
+	"io"
+	"net/http"
+	"net/url"
 	"strings"
 
-	"github.com/gocolly/colly/v2"
+	"golang.org/x/net/html"
+	"golang.org/x/net/html/atom"
 )
 
-func (c *Client) GetLyricsFromLink(url string) (*LyricResult, error) {
-	res := new(LyricResult)
-	// Instantiate default collector
-	// On every an element which has href attribute call callback
-	c.Opts.Collector.OnHTML(c.Opts.LyricCssSelector, func(e *colly.HTMLElement) {
-		// link := e.Attr("href")
-		res.Lyrics = e.Text
-	})
-	c.Opts.Collector.OnHTML(c.Opts.SongNameCssSelector, func(e *colly.HTMLElement) {
-		res.Song = strings.ReplaceAll(e.Text, "Lyrics", "")
-	})
-
-	c.Opts.Collector.OnHTML(c.Opts.ArtistNameCssSelector, func(e *colly.HTMLElement) {
-		res.Artist = e.Text
-	})
-	// Before making a request print "Visiting ..."
-	c.Opts.Collector.OnRequest(func(r *colly.Request) {
-		if c.loggerFunc != nil {
-			c.loggerFunc("[MusixScrape Debug] Visiting", r.URL.String())
-		}
-	})
-
-	err := c.Opts.Collector.Visit(url)
-	if err != nil {
-		return nil, err
+func (c *Client) GetLyrics(url *url.URL) (Lyrics, error) {
+	lyrics := Lyrics{
+		Artist: "",
+		Song:   "",
+		Lyrics: "",
 	}
-
-	return res, nil
+	startParsingSong := false
+	startParsingArtist := false
+	startParsingLyrics := false
+	req, err := http.NewRequest("GET", url.String(), nil)
+	if err != nil {
+		return lyrics, err
+	}
+	req.Header.Set("User-Agent", c.UserAgent)
+	resp, err := c.HttpClient.Do(req)
+	if err != nil {
+		return lyrics, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != 200 {
+		return lyrics, fmt.Errorf("musixmatch returned %d", resp.StatusCode)
+	}
+	z := html.NewTokenizer(resp.Body)
+	for {
+		z.Next()
+		token := z.Token()
+		switch token.Type {
+		case html.ErrorToken:
+			if errors.Is(z.Err(), io.EOF) {
+				return lyrics, nil
+			}
+			return lyrics, z.Err()
+		case html.EndTagToken:
+			// the song title starts after <small>Lyrics</small>
+			startParsingSong = token.DataAtom == atom.Small
+			startParsingArtist = false
+			startParsingLyrics = false
+			break
+		case html.TextToken:
+			if startParsingSong {
+				lyrics.Song += token.Data
+			} else if startParsingArtist {
+				lyrics.Artist += token.Data
+			} else if startParsingLyrics {
+				lyrics.Lyrics += token.Data
+			}
+			break
+		case html.StartTagToken:
+			if token.DataAtom == atom.A {
+				for _, attr := range token.Attr {
+					if attr.Key == "class" {
+						startParsingArtist = stringInArray(strings.Split(attr.Val, " "), "mxm-track-title__artist")
+						if startParsingArtist {
+							break
+						}
+					}
+				}
+			} else if token.DataAtom == atom.Span {
+				for _, attr := range token.Attr {
+					if attr.Key == "class" && attr.Val == "lyrics__content__ok" {
+						startParsingLyrics = true
+						break
+					}
+				}
+			}
+		}
+	}
 }
 
-func (c *Client) Search(query string) ([]LyricResult, error) {
-	var res []LyricResult
-	var err error
-	url := c.Opts.SearchUrl + query
-	/*
-		c.OnHTML(`div.box:nth-child(1) > div:nth-child(2) > div:nth-child(1) > ul:nth-child(1) > li:nth-child(1) > div:nth-child(1) > div:nth-child(2) > div:nth-child(1) > h2:nth-child(1) > a:nth-child(1)`,
-			func(e *colly.HTMLElement) {
-				if l := e.Attr("href"); l != "" {
-					link := "https://" + Domain + l
-					ly, err := GetLyricsFromLink(link)
-					if err != nil {
-						return
-					}
-					res = append(res, *ly)
-				}
-			})
-	*/
-	c.Opts.Collector.OnHTML(c.Opts.SearchOuterCssSelector, func(element *colly.HTMLElement) {
-		element.ForEach(c.Opts.SearchInnerCssSelector,
-			func(i int, element *colly.HTMLElement) {
-				if l := element.Attr("href"); l != "" {
-					link := "https://" + c.Opts.Domain + l
-					ly, err := c.GetLyricsFromLink(link)
-					if err != nil {
-						return
-					}
-
-					res = append(res, *ly)
-				}
-			})
-	})
-	// Before making a request print "Visiting ..."
-	c.Opts.Collector.OnRequest(func(r *colly.Request) {
-		if c.loggerFunc != nil {
-			c.loggerFunc("[MusixScrape Debug] Visiting", r.URL.String())
-		}
-	})
-
-	err = c.Opts.Collector.Visit(url)
+func (c *Client) Search(query string) ([]SearchResult, error) {
+	var results []SearchResult
+	result := SearchResult{
+		Artist: "",
+		Song:   "",
+		Url:    nil,
+	}
+	startParsingResults := false
+	startParsingSong := false
+	startParsingArtist := false
+	// used for song and artist
+	temporaryString := ""
+	req, err := http.NewRequest("GET", c.SearchUrl+url.PathEscape(query), nil)
 	if err != nil {
 		return nil, err
 	}
-
-	return res, nil
+	req.Header.Set("User-Agent", c.UserAgent)
+	resp, err := c.HttpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != 200 {
+		return nil, fmt.Errorf("musixmatch returned %d", resp.StatusCode)
+	}
+	z := html.NewTokenizer(resp.Body)
+	for {
+		z.Next()
+		token := z.Token()
+		switch token.Type {
+		case html.ErrorToken:
+			if errors.Is(z.Err(), io.EOF) {
+				return results, nil
+			}
+			return nil, z.Err()
+		case html.StartTagToken:
+			if token.DataAtom == atom.Ul && !startParsingResults {
+				for _, attr := range token.Attr {
+					if attr.Key == "class" {
+						startParsingResults = stringInArray(strings.Split(attr.Val, " "), "tracks")
+						if startParsingResults {
+							results = nil
+							break
+						}
+					}
+				}
+			} else if token.DataAtom == atom.A && startParsingResults {
+				href := ""
+				for _, attr := range token.Attr {
+					if attr.Key == "href" {
+						href = attr.Val
+					} else if attr.Key == "class" {
+						if attr.Val == "title" {
+							startParsingSong = true
+						} else if attr.Val == "artist" {
+							startParsingArtist = true
+						}
+					}
+				}
+				if startParsingSong {
+					songUrl, err := resp.Request.URL.Parse(href)
+					if err != nil {
+						return nil, fmt.Errorf("failed to parse song url: %s", err)
+					}
+					result.Url = songUrl
+				}
+			}
+			break
+		case html.TextToken:
+			if startParsingSong || startParsingArtist {
+				temporaryString += token.Data
+			}
+			break
+		case html.EndTagToken:
+			if startParsingSong {
+				result.Song = strings.TrimSpace(temporaryString)
+				temporaryString = ""
+				startParsingSong = false
+			} else if startParsingArtist {
+				result.Artist = strings.TrimSpace(temporaryString)
+				temporaryString = ""
+				startParsingArtist = false
+			} else if token.DataAtom == atom.Li && startParsingResults {
+				results = append(results, result)
+				result = SearchResult{
+					Artist: "",
+					Song:   "",
+					Url:    nil,
+				}
+			} else if token.DataAtom == atom.Ul {
+				startParsingResults = false
+			}
+		}
+	}
 }

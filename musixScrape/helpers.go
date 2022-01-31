@@ -18,12 +18,25 @@
 
 package musixScrape
 
-func New(opts *ScrapeOpts) *Client {
-	if opts == nil {
-		opts = DefaultOpts
-	}
+import "net/http"
+
+// New builds a Client with default settings. If you want to change them,
+// change them after calling New or construct the Client manually
+func New() *Client {
 	return &Client{
-		Opts:       opts,
-		loggerFunc: opts.Logger,
+		SearchUrl: DefaultSearchUrl,
+		UserAgent: DefaultUserAgent,
+		HttpClient: &http.Client{
+			Timeout: DefaultTimeout,
+		},
 	}
+}
+
+func stringInArray(array []string, str string) bool {
+	for _, i := range array {
+		if i == str {
+			return true
+		}
+	}
+	return false
 }

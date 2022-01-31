@@ -1,32 +1,45 @@
-# <img src="https://s.mxmcdn.net/site/images/logo_icon.svg" width="45px" align="left"></img>MusixScrape [![Go Reference](https://pkg.go.dev/badge/github.com/Dank-del/MusixScrape.svg)](https://pkg.go.dev/github.com/Dank-del/MusixScrape) [![Go-linux](https://github.com/Dank-del/MusixScrape/actions/workflows/go-linux.yml/badge.svg)](https://github.com/Dank-del/MusixScrape/actions/workflows/go-linux.yml) [![Go-macos](https://github.com/Dank-del/MusixScrape/actions/workflows/go-macos.yml/badge.svg)](https://github.com/Dank-del/MusixScrape/actions/workflows/go-macos.yml) [![Go-windows](https://github.com/Dank-del/MusixScrape/actions/workflows/go-windows.yml/badge.svg)](https://github.com/Dank-del/MusixScrape/actions/workflows/go-windows.yml)
+/*
+   MusixScrape - A Golang library to scrape lyrics from musixmatch.com
+   Copyright (C) 2021  Sayan Biswas, ALiwoto
 
-### A Golang package to scrape [musixmatch.com](https://www.musixmatch.com)
+   This program is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
 
-## How to use?
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
 
-```go
-package main
+   You should have received a copy of the GNU General Public License
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+package tests_test
 
 import (
-	"log"
 	"net/url"
+	"testing"
 
 	"github.com/Dank-del/MusixScrape/musixScrape"
 )
 
-func main() {
+func TestReadme(t *testing.T) {
 	c := musixScrape.New()
 	url, err := url.Parse("https://www.musixmatch.com/lyrics/BAND-MAID/Sense")
 	if err != nil {
-		log.Fatalln(err)
+		t.Error(err)
+		return
 	}
 	lyrics, err := c.GetLyrics(url)
 	if err != nil {
-		log.Fatalln(err)
+		t.Error(err)
+		return
 	}
-	fmt.Println(lyrics)
+	t.Log(lyrics)
 	/*
-		{Band-Maid Sense 願ってもなにも出来ないと
+		musixscrape_readme_test.go:40: {Band-Maid Sense 願ってもなにも出来ないと
 			わかってはいるけど
 			失う怖さが邪魔をしても誰しも明日へ向かう
 
@@ -89,15 +102,11 @@ func main() {
 	*/
 	results, err := c.Search("Yuu Miyashita - Koufukuron")
 	if err != nil {
-		log.Fatalln(err)
+		t.Error(err)
+		return
 	}
-	log.Println(results)
+	t.Log(results)
 	/*
-		[{宮下 遊 Koufukuron TV Size Ver. https://www.musixmatch.com/lyrics/%E5%AE%AE%E4%B8%8B-%E9%81%8A/Koufukuron-TV-Size-Ver}]
+		musixscrape_readme_test.go:108: [{宮下 遊 Koufukuron TV Size Ver. https://www.musixmatch.com/lyrics/%E5%AE%AE%E4%B8%8B-%E9%81%8A/Koufukuron-TV-Size-Ver}]
 	*/
 }
-```
-
-## License
-[![GPLv3](https://www.gnu.org/graphics/gplv3-127x51.png)](https://www.gnu.org/licenses/gpl-3.0.en.html)
-<br>Licensed Under <a href="https://www.gnu.org/licenses/gpl-3.0.en.html">GNU General Public License v3</a>
